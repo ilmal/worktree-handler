@@ -816,8 +816,9 @@ export class Manager {
 
 	/**
 	 * The repo's permanent branches — a PR merged into one of these means the
-	 * branch's work has landed. The default branch alone is not enough: some PRs
-	 * here target `production`, so keying on origin/HEAD would never flag them.
+	 * branch's work has landed. The default branch alone is not enough: some
+	 * repos PR into a long-lived branch like `production`, so keying on
+	 * origin/HEAD would never flag those.
 	 * Only branches that actually exist on the remote are returned.
 	 */
 	private longLivedBranches(dir: string): string[] {
