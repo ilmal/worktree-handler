@@ -1,0 +1,84 @@
+# Always-on worktree handler.
+#
+# Uses host networking so the dynamically-assigned dev-server ports (the
+# dashboard at HANDLER_PORT plus each worktree's block of 3) are reachable on
+# localhost without per-port mapping. The whole workspace is bind-mounted at
+# its IDENTICAL host path so git worktree metadata and absolute cache paths
+# (.next, .turbo, node_modules symlinks) resolve exactly as on the host.
+#
+# Settings come from .env (WORKSPACE_ROOT_HOST, HANDLER_PORT, PORT_BASE, ...).
+
+name: worktree-handler
+
+services:
+  handler:
+    build:
+      context: .
+      args:
+        BUN_VERSION: ${BUN_VERSION:-1.3.13}
+    image: worktree-handler
+    container_name: worktree-handler
+    network_mode: host
+    # Run as the host user so files created by the dev servers (caches, tokens
+    # css, .next) stay owned by you, not root.
+    user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
+    volumes:
+      - ${WORKSPACE_ROOT_HOST:?set WORKSPACE_ROOT_HOST in .env}:${WORKSPACE_ROOT_HOST:?set WORKSPACE_ROOT_HOST in .env}
+    working_dir: ${WORKSPACE_ROOT_HOST:?set WORKSPACE_ROOT_HOST in .env}/handler
+    environment:
+      WORKSPACE_ROOT: ${WORKSPACE_ROOT_HOST:?set WORKSPACE_ROOT_HOST in .env}
+      HANDLER_PORT: ${HANDLER_PORT:-47000}
+      PORT_BASE: ${PORT_BASE:-47100}
+      PORT_STEP: ${PORT_STEP:-100}
+      # 1 = auto-spin a worktree's servers when discovered; 0 = start everything
+      # offline and only start when you press "Start all" / per-server.
+      AUTOSTART: ${AUTOSTART:-0}
+      # Seed gitignored env files from the main repo into new worktrees.
+      SEED_ENV: ${SEED_ENV:-1}
+      MAIN_REPO: ${MAIN_REPO:-main-repo}
+      # Host used in "Open" links; blank = auto-detect the LAN IPv4 (not localhost).
+      PUBLIC_HOST: ${PUBLIC_HOST:-}
+      # GitHub token (a `gh auth token`) so PR bases read the real PR base ref,
+      # and so "Merge main" can fetch over HTTPS (the SSH origin has no key here).
+      GH_TOKEN: ${GH_TOKEN:-}
+      # Identity for the merge commit created by "Merge main".
+      GIT_USER_NAME: ${GIT_USER_NAME:-}
+      GIT_USER_EMAIL: ${GIT_USER_EMAIL:-}
+      # Where the host-side launcher listens (for the "Open Claude" button). The
+      # browser calls it directly; run it on your machine with `bun run launcher`.
+      LAUNCHER_URL: ${LAUNCHER_URL:-http://localhost:48010}
+      # Shared login (no WorkOS access needed): run the MAIN_REPO app on this
+      # port (WorkOS only allows localhost:3000) and funnel every app's login
+      # there. Log in once on localhost:3000 → all worktree apps on localhost
+      # are logged in. Set to 0 to disable (apps use base ports + LAN-IP links).
+      APP_AUTH_PORT: ${APP_AUTH_PORT:-3000}
+      # Advanced override: a specific allowlisted WorkOS redirect URI to funnel
+      # logins through. Defaults to http://localhost:<APP_AUTH_PORT>/callback.
+      AUTH_REDIRECT_URI: ${AUTH_REDIRECT_URI:-}
+      # Dev-login bootstrap: "Open" links hand the browser a session
+      # cookie so every worktree opens already logged in. The identity is the
+      # most recent local login; this mail is the fallback when the local DB
+      # has no live session yet. Blank = require an existing login.
+      DEV_LOGIN_MAIL: ${DEV_LOGIN_MAIL:-}
+      # Pre-warm each dev server as soon as its port opens, so Vite's lazy SSR
+      # compile happens before the first click instead of blocking the first page
+      # load (~30s cold). 0 = disable.
+      WARMUP: ${WARMUP:-1}
+      # How many dev servers may warm up at once. Vite's SSR compile is
+      # CPU-bound, so warming 20 cold servers in parallel just makes them all
+      # slower (a 36s compile stretched to 88-174s at load ~60). 0 = no cap.
+      WARMUP_CONCURRENCY: ${WARMUP_CONCURRENCY:-2}
+      # Spawn Vite with a config override that merges `allowedHosts: true`, so
+      # hostname links (e.g. a Tailscale MagicDNS name) aren't 403'd. The
+      # override lives in this repo; the app repo is never touched. 0 = disable.
+      ALLOW_VITE_HOSTS: ${ALLOW_VITE_HOSTS:-1}
+      # A writable HOME inside the mount for bun's cache (the host home dir is
+      # not mounted, so HOME must point somewhere that exists in the container).
+      HOME: ${WORKSPACE_ROOT_HOST:?set WORKSPACE_ROOT_HOST in .env}/handler/.home
+    restart: unless-stopped
+    # Many Turbopack/Storybook watchers per worktree open a lot of file
+    # descriptors; the default soft limit of 1024 causes "Too many open files".
+    ulimits:
+      nofile:
+        soft: 524288
+        hard: 524288

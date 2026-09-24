@@ -1,0 +1,15 @@
+{
+	"name": "worktree-handler",
+	"version": "1.0.0",
+	"private": true,
+	"type": "module",
+	"description": "Always-on dashboard that discovers git worktrees and runs 3 dev servers each on stable obscure ports.",
+	"scripts": {
+		"dev": "bun run src/server.ts",
+		"launcher": "bun run launcher.ts",
+		"up": "docker compose up -d --build",
+		"down": "docker compose down",
+		"logs": "docker compose logs -f",
+		"restart": "docker compose restart"
+	}
+}

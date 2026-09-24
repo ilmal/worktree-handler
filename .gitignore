@@ -1,0 +1,4 @@
+state/
+.home/
+*.log
+.env

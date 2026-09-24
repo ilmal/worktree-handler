@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>worktree handler</title>
+		<link rel="stylesheet" href="/styles.css" />
+		<link
+			rel="icon"
+			href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛰️</text></svg>"
+		/>
+	</head>
+	<body>
+		<header>
+			<div class="brand">
+				<span class="logo">🛰️</span>
+				<div>
+					<h1>worktree handler</h1>
+					<div class="sub" id="subline">loading…</div>
+				</div>
+			</div>
+			<div class="header-actions">
+				<span id="conn" class="pill pill-ok">live</span>
+				<button id="new-cat" class="btn">＋ Category</button>
+				<button id="clean-merged" class="btn warn" disabled>🧹 Clean up 0 merged</button>
+				<button id="start-all" class="btn primary">▶ Start all</button>
+				<button id="stop-all" class="btn danger">■ Stop all</button>
+				<button id="rescan" class="btn">Rescan</button>
+			</div>
+		</header>
+
+		<main id="worktrees"></main>
+
+		<div id="log-modal" class="modal hidden">
+			<div class="modal-card">
+				<div class="modal-head">
+					<span id="log-title">logs</span>
+					<div class="modal-head-actions">
+						<label class="autoscroll"
+							><input type="checkbox" id="autoscroll" checked /> follow</label
+						>
+						<button id="log-copy" class="btn">Copy</button>
+						<button id="log-close" class="btn">Close</button>
+					</div>
+				</div>
+				<pre id="log-body" class="log-body"></pre>
+			</div>
+		</div>
+
+		<div id="confirm-modal" class="modal hidden">
+			<div class="modal-card confirm-card">
+				<div class="modal-head"><span id="confirm-title">Are you sure?</span></div>
+				<div class="confirm-body" id="confirm-message"></div>
+				<div class="confirm-actions">
+					<button id="confirm-cancel" class="btn">Cancel</button>
+					<button id="confirm-ok" class="btn danger">Delete</button>
+				</div>
+			</div>
+		</div>
+
+		<script src="/app.js"></script>
+	</body>
+</html>
